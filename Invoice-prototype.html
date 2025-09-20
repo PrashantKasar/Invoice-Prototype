@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Invoice Prototype — Editable & Downloadable</title>
+  <style>
+    :root{--accent:#0b5;--muted:#666}
+    body{font-family:Arial,Helvetica,sans-serif;margin:20px;background:#f3f3f5}
+    .wrap{max-width:900px;margin:0 auto;background:#fff;padding:22px;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
+    header{display:flex;justify-content:space-between;align-items:flex-start}
+    header .left{line-height:1}
+    header h1{margin:0;font-size:20px}
+    header p{margin:2px 0;color:var(--muted);font-size:13px}
+    .logo{width:84px;height:84px;border-radius:6px;background:linear-gradient(135deg,#f76 10%,#fb8 60%);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+
+    .invoice-title{text-align:center;margin:18px 0 8px}
+    .grid{display:flex;justify-content:space-between;gap:14px}
+    .card{flex:1;padding:12px}
+    .card h3{margin:0 0 6px;font-size:15px}
+    .meta{font-size:13px;color:var(--muted)}
+
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border:1px solid #cfcfcf;padding:8px;text-align:left;font-size:14px}
+    th{background:#efefef}
+    .right{text-align:right}
+    .section-title{background:#f7f7f7;padding:6px 8px;font-weight:700}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+    button{padding:8px 12px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    button.primary{background:var(--accent);border-color:transparent;color:#003}
+
+    .muted{color:var(--muted);font-size:13px}
+
+    .terms{margin-top:18px;font-size:13px;color:#333}
+
+    /* print styles */
+    @media print{
+      body{background:white}
+      .controls{display:none}
+      .wrap{box-shadow:none;margin:0;border-radius:0}
+      button{display:none}
+    }
+
+    input[type="number"]{width:110px;padding:6px;border:1px solid #ddd;border-radius:4px}
+    input[type="text"]{border:none;background:transparent;width:100%}
+    .nowrap{white-space:nowrap}
+    .table-actions{display:flex;gap:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap" id="invoiceRoot">
+    <header>
+      <div class="left">
+        <h1 contenteditable id="businessName">Cook Well Kitchen's & Interior</h1>
+        <p contenteditable id="businessAddress">H5/18 MIDC Behind Hotel CePet Road, Chikalthana</p>
+        <p class="muted" contenteditable id="businessContact">Phone: 7755992260 | Email: Pwanare07@gmail.com</p>
+      </div>
+      <div class="logo" contenteditable id="logoText">FUR</div>
+    </header>
+
+    <div class="invoice-title">
+      <h2>Tax Invoice</h2>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Bill To</h3>
+        <div contenteditable id="billToName"><strong>Mr.Prashant Kasar</strong></div>
+        <div contenteditable id="billToContact" class="muted">Contact No.: 7588699522</div>
+      </div>
+      <div class="card">
+        <h3>Invoice Details</h3>
+        <div class="meta">Invoice No.: <span contenteditable id="invoiceNo">102</span></div>
+        <div class="meta">Date: <span contenteditable id="invoiceDate">09-10-2024</span></div>
+        <div class="meta">Place of Supply: <span contenteditable id="supplyPlace">27 Maharashtra</span></div>
+      </div>
+    </div>
+
+    <table id="itemsTable">
+      <thead>
+        <tr>
+          <th style="width:36px">#</th>
+          <th>Item Name</th>
+          <th style="width:120px">Price / Unit</th>
+          <th style="width:120px">Amount</th>
+          <th style="width:90px">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody">
+        <!-- rows inserted by JS -->
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2" class="right"><strong>TOTAL</strong></td>
+          <td colspan="2" class="right nowrap"><strong id="grandTotal">0.00</strong></td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="controls">
+      <button id="addRow">Add Row</button>
+      <button id="resetDemo">Load Demo Data</button>
+      <button id="downloadHtml">Download HTML</button>
+      <button id="printPdf" class="primary">Print / Save as PDF</button>
+    </div>
+
+    <div class="terms">
+      <h4>Terms &amp; Conditions :</h4>
+      <ul>
+        <li contenteditable>Including Transport and Labor.</li>
+        <li contenteditable>Rates are Valid for 30 Days from date of Quotation.</li>
+        <li contenteditable>Taxes - GST Extra.</li>
+        <li contenteditable>Payment Schedule: 50% Advanced, 40% Before Dispatch, 10% On Completion.</li>
+      </ul>
+
+      <h4>Material Details:</h4>
+      <ul>
+        <li contenteditable>Action Tesa (HDHMR) (18mm) &amp; (9mm).</li>
+        <li contenteditable>Carpenter or Gurjan Gold (18mm) BWP Material.</li>
+        <li contenteditable>All hardware are premium material.</li>
+      </ul>
+    </div>
+  </div>
+
+<script>
+  // Invoice prototype functionality
+  const demoRows = [
+    ['T.V. Unit',85000],
+    ['Mandir',40000],
+    ['Sofaset (26 Ft.)',91000],
+    ['Table and Chair',31000],
+    ['Platform Unit Hall',38630],
+    ['Center Table',21000],
+    ['Wall Panneling Hall',82000]
+  ];
+
+  const itemsBody = document.getElementById('itemsBody');
+  const grandTotalEl = document.getElementById('grandTotal');
+
+  function formatMoney(n){
+    return Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
+  function createRow(index,name='',price=0,amount=0){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="nowrap">${index}</td>
+      <td><input type="text" class="item-name" value="${escapeHtml(name)}" /></td>
+      <td class="right"><input type="number" class="price" min="0" step="0.01" value="${price}" /></td>
+      <td class="right"><input type="number" class="amount" min="0" step="0.01" value="${amount}" /></td>
+      <td class="table-actions">
+        <button class="btn-calc">Calc</button>
+        <button class="btn-delete">Delete</button>
+      </td>
+    `;
+
+    // event listeners
+    tr.querySelector('.price').addEventListener('input', ()=>{ recalcRow(tr); recalcTotal(); });
+    tr.querySelector('.amount').addEventListener('input', ()=>{ recalcTotal(); });
+    tr.querySelector('.btn-calc').addEventListener('click', ()=>{ recalcRow(tr); recalcTotal(); });
+    tr.querySelector('.btn-delete').addEventListener('click', ()=>{ tr.remove(); refreshIndices(); recalcTotal(); });
+
+    return tr;
+  }
+
+  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function recalcRow(tr){
+    const price = parseFloat(tr.querySelector('.price').value) || 0;
+    const amountInput = tr.querySelector('.amount');
+    // assume amount = price * 1 unit unless user provided
+    if(!amountInput.value || Number(amountInput.value) === 0){
+      amountInput.value = (price).toFixed(2);
+    }
+  }
+
+  function refreshIndices(){
+    [...itemsBody.querySelectorAll('tr')].forEach((tr,i)=>{ tr.children[0].textContent = i+1; });
+  }
+
+  function recalcTotal(){
+    let total = 0;
+    [...itemsBody.querySelectorAll('tr')].forEach(tr=>{
+      const amt = parseFloat(tr.querySelector('.amount').value) || 0;
+      total += amt;
+    });
+    grandTotalEl.textContent = formatMoney(total);
+  }
+
+  document.getElementById('addRow').addEventListener('click', ()=>{
+    const idx = itemsBody.children.length + 1;
+    const tr = createRow(idx,'',0,0);
+    itemsBody.appendChild(tr);
+  });
+
+  document.getElementById('resetDemo').addEventListener('click', ()=>{
+    itemsBody.innerHTML='';
+    demoRows.forEach((r,i)=> itemsBody.appendChild(createRow(i+1,r[0],r[1],r[1])));
+    recalcTotal();
+  });
+
+  document.getElementById('downloadHtml').addEventListener('click', ()=>{
+    // create a standalone HTML with current invoice content
+    const content = document.getElementById('invoiceRoot').outerHTML;
+    const head = `<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Invoice Export</title></head><body>`;
+    const foot = `</body></html>`;
+    const blob = new Blob([head + content + foot], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (document.getElementById('invoiceNo').textContent || 'invoice') + '.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('printPdf').addEventListener('click', ()=>{
+    // Ensure calculations up to date before printing
+    recalcTotal();
+    // Use browser print dialogue — user can choose "Save as PDF"
+    window.print();
+  });
+
+  // initialize demo
+  document.getElementById('resetDemo').click();
+
+  // Make some text elements editable but protect number inputs: allow contenteditable for these spans
+  // Utility: save auto changes to localStorage so edits persist for the user across reloads
+  const editableIds = ['businessName','businessAddress','businessContact','billToName','billToContact','invoiceNo','invoiceDate','supplyPlace','logoText'];
+  editableIds.forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('input', ()=> localStorage.setItem('invoice_'+id, el.innerHTML));
+    const saved = localStorage.getItem('invoice_'+id);
+    if(saved) el.innerHTML = saved;
+  });
+
+  // Save table data periodically and on unload
+  function saveTable(){
+    const rows = [...itemsBody.querySelectorAll('tr')].map(tr=>({name:tr.querySelector('.item-name').value, price:tr.querySelector('.price').value, amount:tr.querySelector('.amount').value}));
+    localStorage.setItem('invoice_rows', JSON.stringify(rows));
+  }
+  window.addEventListener('beforeunload', saveTable);
+  setInterval(saveTable,3000);
+
+  // restore rows if present
+  (function restoreRows(){
+    const raw = localStorage.getItem('invoice_rows');
+    if(!raw) return;
+    try{
+      const rows = JSON.parse(raw);
+      itemsBody.innerHTML='';
+      rows.forEach((r,i)=> itemsBody.appendChild(createRow(i+1,r.name || '', r.price || 0, r.amount || 0)));
+      recalcTotal();
+    }catch(e){ console.warn('restore failed',e); }
+  })();
+
+</script>
+</body>
+</html>
